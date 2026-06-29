@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Rutina · Tracker Anual</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&display=swap');
+
+  :root{
+    --ink:#1c1a24;
+    --paper:#fffaf2;
+    --line:rgba(28,26,36,0.10);
+
+    --c-madrugada:#ff6b5b;
+    --c-dia:#ffb648;
+    --c-tarde:#33b1a6;
+    --c-noche:#6f6bd6;
+    --c-pro:#e35fb0;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:var(--paper);
+    color:var(--ink);
+    font-family:'Inter',sans-serif;
+    min-height:100vh;
+    padding:30px 16px 60px;
+  }
+  .wrap{max-width:660px;margin:0 auto;}
+
+  header{margin-bottom:22px;}
+  .eyebrow{
+    font-size:11px;font-weight:600;
+    letter-spacing:.18em;text-transform:uppercase;
+    color:var(--c-pro);margin-bottom:8px;
+  }
+  h1{
+    font-family:'Fraunces',serif;font-weight:600;
+    font-size:36px;line-height:1.02;margin:0 0 6px;
+    background:linear-gradient(90deg,var(--c-madrugada),var(--c-dia),var(--c-tarde),var(--c-noche),var(--c-pro));
+    -webkit-background-clip:text;background-clip:text;color:transparent;
+  }
+  .sub{font-size:13.5px;color:rgba(28,26,36,0.55);max-width:460px;}
+
+  .month-row{display:flex;gap:5px;overflow-x:auto;padding-bottom:8px;margin-bottom:14px;}
+  .month-pill{
+    flex:0 0 auto;padding:7px 13px;border-radius:20px;
+    font-size:12px;font-weight:600;letter-spacing:.02em;
+    border:1.5px solid var(--line);background:#fff;cursor:pointer;
+    color:rgba(28,26,36,0.5);white-space:nowrap;transition:.15s;
+  }
+  .month-pill.active{ background:var(--ink);color:#fff;border-color:var(--ink); }
+
+  .day-grid{ display:grid;grid-template-columns:repeat(7,1fr);gap:6px;margin-bottom:22px; }
+  .dow{font-size:10px;text-align:center;color:rgba(28,26,36,0.35);text-transform:uppercase;font-weight:600;}
+  .day-cell{
+    aspect-ratio:1;border-radius:8px;border:1.5px solid var(--line);
+    display:flex;flex-direction:column;align-items:center;justify-content:center;
+    cursor:pointer;background:#fff;position:relative;transition:.15s;
+  }
+  .day-cell .dnum{font-size:12px;font-weight:600;color:rgba(28,26,36,0.65);z-index:1;}
+  .day-cell.empty{border:none;cursor:default;background:transparent;}
+  .day-cell.selected{border-color:var(--ink);border-width:2px;}
+  .day-cell.future{opacity:.35;}
+  .ring{ position:absolute;inset:2px;border-radius:7px;background:conic-gradient(var(--c-tarde) calc(var(--p)*1%), transparent 0);opacity:.85;z-index:0; }
+  .day-cell.full{background:linear-gradient(135deg,var(--c-madrugada),var(--c-pro));}
+  .day-cell.full .dnum{color:#fff;}
+
+  .progress-card{
+    display:flex;align-items:center;justify-content:space-between;
+    border-radius:16px;padding:18px 20px;margin-bottom:24px;
+    background:linear-gradient(120deg,#fff0e8,#fff9ec);
+    border:1.5px solid var(--line);
+  }
+  .progress-card .label{font-size:10.5px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:rgba(28,26,36,0.45);}
+  .progress-card .num{font-family:'Fraunces',serif;font-size:28px;font-weight:600;color:var(--c-madrugada);}
+  .bar-track{flex:1;height:8px;border-radius:6px;background:var(--line);margin:0 18px;overflow:hidden;}
+  .bar-fill{height:100%;border-radius:6px;background:linear-gradient(90deg,var(--c-madrugada),var(--c-dia),var(--c-tarde));transition:width .3s;}
+  .progress-card .streakwrap .num{color:var(--c-pro);}
+
+  .block{margin-bottom:22px;}
+  .block-title{
+    font-family:'Fraunces',serif;font-weight:600;font-size:14px;
+    margin-bottom:8px;padding-left:10px;border-left:5px solid var(--block-color);
+  }
+
+  .item{
+    display:flex;align-items:center;gap:14px;
+    padding:12px 14px;margin-bottom:7px;border-radius:12px;
+    background:#fff;border:1.5px solid var(--line);cursor:pointer;transition:.15s;
+  }
+  .item.done{background:var(--block-color);border-color:var(--block-color);}
+  .check{ width:22px;height:22px;border-radius:50%;border:2px solid var(--block-color);flex-shrink:0;position:relative;background:#fff; }
+  .item.done .check{background:#fff;border-color:#fff;}
+  .item.done .check::after{
+    content:'';position:absolute;left:7px;top:3px;width:5px;height:10px;
+    border-right:2px solid var(--block-color);border-bottom:2px solid var(--block-color);
+    transform:rotate(45deg);
+  }
+  .item-text{flex:1;}
+  .item-name{font-size:14px;font-weight:500;color:var(--ink);}
+  .item.done .item-name{color:#fff;}
+  .item-time{font-size:11px;color:rgba(28,26,36,0.45);display:block;margin-top:1px;}
+  .item.done .item-time{color:rgba(255,255,255,0.75);}
+
+  .yeargrid-wrap{overflow-x:auto;}
+  .yeargrid{display:flex;gap:3px;padding-bottom:6px;min-width:700px;}
+  .yeargrid .col{display:flex;flex-direction:column;gap:3px;}
+  .yeargrid .cell{width:9px;height:9px;border-radius:2px;background:var(--line);}
+  .yeargrid .cell.l1{background:#ffd9b3;}
+  .yeargrid .cell.l2{background:#ffae6e;}
+  .yeargrid .cell.l3{background:#ff7d5c;}
+  .yeargrid .cell.l4{background:#e35fb0;}
+
+  footer{margin-top:30px;text-align:center;font-size:11px;color:rgba(28,26,36,0.35);letter-spacing:.06em;}
+  .reset-btn{
+    background:#fff;border:1.5px solid var(--line);color:rgba(28,26,36,0.55);
+    font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;
+    padding:8px 14px;border-radius:20px;cursor:pointer;margin-top:14px;
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div class="eyebrow">Disciplina · Año completo</div>
+    <h1>La rutina</h1>
+    <div class="sub">365 días de construir la versión más disciplinada de ti — en lo personal y en lo profesional.</div>
+  </header>
+
+  <div class="month-row" id="monthRow"></div>
+  <div class="day-grid" id="dayGrid"></div>
+
+  <div class="progress-card">
+    <div>
+      <div class="label">Día seleccionado</div>
+      <div class="num" id="todayPct">0%</div>
+    </div>
+    <div class="bar-track"><div class="bar-fill" id="todayBar" style="width:0%"></div></div>
+    <div class="streakwrap" style="text-align:right;">
+      <div class="label">Racha</div>
+      <div class="num" id="streakNum">0</div>
+    </div>
+  </div>
+
+  <div id="blocks"></div>
+
+  <div class="block">
+    <div class="block-title" style="border-color:var(--ink);">Mapa del año</div>
+    <div class="yeargrid-wrap"><div class="yeargrid" id="yearGrid"></div></div>
+    <button class="reset-btn" id="resetBtn">Reiniciar día seleccionado</button>
+  </div>
+
+  <footer>GOYA · cada casilla es una decisión</footer>
+</div>
+
+<script>
+const YEAR = 2026;
+const HABITS = [
+  {id:'h1', name:'Despertar 5:00 am', time:'5:00', block:'Madrugada', color:'var(--c-madrugada)'},
+  {id:'h3', name:'Organizarme', time:'6:00 – 7:00', block:'Madrugada', color:'var(--c-madrugada)'},
+  {id:'h4', name:'Trabajo', time:'7:00 – 16:30', block:'Día', color:'var(--c-dia)'},
+  {id:'h5', name:'Almuerzo', time:'12:00 – 13:00', block:'Día', color:'var(--c-dia)'},
+  {id:'h6', name:'Gym', time:'17:00 – 18:30', block:'Tarde', color:'var(--c-tarde)'},
+  {id:'h7', name:'Cena', time:'19:00 – 19:30', block:'Noche', color:'var(--c-noche)'},
+  {id:'h8', name:'Leer', time:'19:30 – 20:30', block:'Noche', color:'var(--c-noche)'},
+  {id:'h9', name:'Dormir 9:00 pm', time:'21:00', block:'Noche', color:'var(--c-noche)'},
+  {id:'p1', name:'Revisar KPIs / métricas del día', time:'7:00', block:'Profesional', color:'var(--c-pro)'},
+  {id:'p2', name:'1 hora de trabajo profundo sin notificaciones', time:'9:00 – 10:00', block:'Profesional', color:'var(--c-pro)'},
+  {id:'p3', name:'Aprender algo nuevo del oficio (15 min)', time:'13:00', block:'Profesional', color:'var(--c-pro)'},
+  {id:'p4', name:'Escribir o avanzar GOYA.CO', time:'16:00', block:'Profesional', color:'var(--c-pro)'},
+  {id:'p5', name:'Networking / 1 contacto con propósito', time:'cualquier hora', block:'Profesional', color:'var(--c-pro)'},
+  {id:'p6', name:'Anotar 1 idea o aprendizaje del día', time:'20:30', block:'Profesional', color:'var(--c-pro)'},
+];
+const BLOCKS = ['Madrugada','Día','Tarde','Noche','Profesional'];
+const BLOCK_COLOR = {Madrugada:'var(--c-madrugada)',Día:'var(--c-dia)',Tarde:'var(--c-tarde)',Noche:'var(--c-noche)',Profesional:'var(--c-pro)'};
+const MONTHS = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+const DOW = ['L','M','M','J','V','S','D'];
+const STORAGE_KEY = 'rutina-goyi-anual-2026';
+
+let state = { days: {} };
+const today = new Date();
+let activeMonth = today.getFullYear()===YEAR ? today.getMonth() : 0;
+let activeDate = today.getFullYear()===YEAR ? fmt(today) : fmt(new Date(YEAR,0,1));
+
+function fmt(d){
+  return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+}
+function daysInMonth(y,m){ return new Date(y,m+1,0).getDate(); }
+function getDay(dateStr){
+  if(!state.days[dateStr]) state.days[dateStr] = {};
+  return state.days[dateStr];
+}
+function pctFor(dateStr){
+  const d = state.days[dateStr] || {};
+  const done = HABITS.filter(h=>d[h.id]).length;
+  return Math.round(done/HABITS.length*100);
+}
+
+function load(){
+  try{
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if(raw) state = JSON.parse(raw);
+  }catch(e){}
+  if(!state.days) state.days = {};
+  render();
+}
+function save(){
+  try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }
+  catch(e){ console.error('storage error', e); }
+}
+
+function renderMonths(){
+  const row = document.getElementById('monthRow');
+  row.innerHTML = '';
+  MONTHS.forEach((m,i)=>{
+    const pill = document.createElement('div');
+    pill.className = 'month-pill' + (i===activeMonth?' active':'');
+    pill.textContent = m;
+    pill.onclick = ()=>{ activeMonth = i; render(); };
+    row.appendChild(pill);
+  });
+}
+
+function renderDayGrid(){
+  const grid = document.getElementById('dayGrid');
+  grid.innerHTML = '';
+  DOW.forEach(d=>{
+    const el = document.createElement('div');
+    el.className = 'dow';
+    el.textContent = d;
+    grid.appendChild(el);
+  });
+  const first = new Date(YEAR, activeMonth, 1);
+  let startOffset = first.getDay() - 1;
+  if(startOffset < 0) startOffset = 6;
+  for(let i=0;i<startOffset;i++){
+    const e = document.createElement('div');
+    e.className = 'day-cell empty';
+    grid.appendChild(e);
+  }
+  const total = daysInMonth(YEAR, activeMonth);
+  for(let day=1; day<=total; day++){
+    const dateObj = new Date(YEAR, activeMonth, day);
+    const dateStr = fmt(dateObj);
+    const pct = pctFor(dateStr);
+    const isFuture = dateObj > today;
+    const cell = document.createElement('div');
+    cell.className = 'day-cell' + (dateStr===activeDate?' selected':'') + (isFuture?' future':'') + (pct===100?' full':'');
+    cell.innerHTML = (pct>0 && pct<100) ? `<div class="ring" style="--p:${pct}"></div><span class="dnum">${day}</span>` : `<span class="dnum">${day}</span>`;
+    cell.onclick = ()=>{ activeDate = dateStr; render(); };
+    grid.appendChild(cell);
+  }
+}
+
+function renderBlocks(){
+  const container = document.getElementById('blocks');
+  container.innerHTML = '';
+  const dayData = getDay(activeDate);
+  BLOCKS.forEach(blockName=>{
+    const items = HABITS.filter(h=>h.block===blockName);
+    const block = document.createElement('div');
+    block.className = 'block';
+    block.style.setProperty('--block-color', BLOCK_COLOR[blockName]);
+    const title = document.createElement('div');
+    title.className = 'block-title';
+    title.textContent = blockName;
+    block.appendChild(title);
+    items.forEach(h=>{
+      const done = !!dayData[h.id];
+      const item = document.createElement('div');
+      item.className = 'item' + (done?' done':'');
+      item.style.setProperty('--block-color', h.color);
+      item.innerHTML = `
+        <div class="check"></div>
+        <div class="item-text">
+          <div class="item-name">${h.name}</div>
+          <span class="item-time">${h.time}</span>
+        </div>`;
+      item.onclick = ()=>{
+        dayData[h.id] = !dayData[h.id];
+        save();
+        render();
+      };
+      block.appendChild(item);
+    });
+    container.appendChild(block);
+  });
+}
+
+function computeStreak(){
+  let streak = 0;
+  let d = new Date(activeDate);
+  while(true){
+    const ds = fmt(d);
+    if(pctFor(ds) === 100){ streak++; d.setDate(d.getDate()-1); }
+    else break;
+  }
+  return streak;
+}
+
+function renderProgress(){
+  const pct = pctFor(activeDate);
+  document.getElementById('todayPct').textContent = pct + '%';
+  document.getElementById('todayBar').style.width = pct + '%';
+  document.getElementById('streakNum').textContent = computeStreak();
+}
+
+function renderYearGrid(){
+  const wrap = document.getElementById('yearGrid');
+  wrap.innerHTML = '';
+  for(let m=0;m<12;m++){
+    const col = document.createElement('div');
+    col.className = 'col';
+    const total = daysInMonth(YEAR,m);
+    for(let day=1; day<=total; day++){
+      const ds = fmt(new Date(YEAR,m,day));
+      const pct = pctFor(ds);
+      let lvl = '';
+      if(pct>0 && pct<=25) lvl='l1';
+      else if(pct<=50) lvl='l2';
+      else if(pct<75) lvl='l3';
+      else if(pct>=75) lvl='l4';
+      const cell = document.createElement('div');
+      cell.className = 'cell' + (lvl?' '+lvl:'');
+      cell.title = ds + ' · ' + pct + '%';
+      col.appendChild(cell);
+    }
+    wrap.appendChild(col);
+  }
+}
+
+function render(){
+  renderMonths();
+  renderDayGrid();
+  renderBlocks();
+  renderProgress();
+  renderYearGrid();
+}
+
+document.getElementById('resetBtn').onclick = ()=>{
+  if(confirm('¿Reiniciar el día seleccionado?')){
+    state.days[activeDate] = {};
+    save();
+    render();
+  }
+};
+
+load();
+</script>
+</body>
+</html>
